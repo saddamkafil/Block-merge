@@ -1,0 +1,31 @@
+name: Block PR Merge on Non-Ready Jira Status
+on:
+  pull_request:
+    branches:
+      - develop
+    types: [labeled]
+jobs:
+  check_jira_ticket:
+    name: Check Jira Ticket Status
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.head_ref }}
+    - name: Get Jira Ticket ID
+      id: get_ticket_id
+      run: |
+        echo ::set-output name=ticket_id::$(echo ${{ github.event.pull_request.title }} | grep -oP "(?<=\[)[a-zA-Z]+-[0-9]+(?=\])")
+    - name: Get Jira Ticket Status
+      id: get_ticket_status
+      uses: atlassian/gajira-get-issue-status-action@master
+      with:
+        server-url: ${{ secrets.JIRA_SERVER_URL }}
+        user-email: ${{ secrets.JIRA_USER_EMAIL }}
+        api-token: ${{ secrets.JIRA_API_TOKEN }}
+        issue-key: ${{ steps.get_ticket_id.outputs.ticket_id }}
+    - name: Block PR Merge
+      if: steps.get_ticket_status.outputs.issue_status != 'Ready'
+      run: |
+        echo "Jira ticket status is not Ready. PR merge to develop branch is blocked."
+        exit 1
