@@ -30,7 +30,7 @@ jobs:
             exit 0
           fi
           jira_ticket_status=$(python -c "import jira; j=jira.JIRA('https://proklouds.atlassian.net/', basic_auth=('saddamshaik.devops@gmail.com', '$JIRA_API_KEY')); print(j.issue('$pr_title').fields.status.name)")
-          if [[ "$jira_ticket_status" == "Review" ]]; then
+          if [[ "$jira_ticket_status" == "REVIEW" ]]; then
             echo "Jira ticket $pr_title is marked as Resolved. Merge to develop is allowed."
             exit 0
           else
