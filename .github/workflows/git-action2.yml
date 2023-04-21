@@ -1,0 +1,25 @@
+name: JIRA Status Check
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+jobs:
+  jira-status-check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.head_ref }}
+    - name: Extract JIRA ticket number
+      run: |
+        jira_ticket="$(echo "${{ github.event.pull_request.title }}" | grep -Eo '[A-Z]+-[0-9]+')"
+        echo "JIRA ticket number: $jira_ticket"
+    - name: Check JIRA status
+      if: ${{ env.jira_ticket != '' }}
+      run: |
+        jira_ticket_status="$(curl -u "${{secrets.JIRA_USERNAME}}":"${{secrets.JIRA_API_KEY}}" -X GET -H "Content-Type: application/json" "https://${{secrets.JIRA_HOST}}/rest/api/2/issue/${jira_ticket}?fields=status" | jq '.fields.status.name')"
+        if [[ "$jira_ticket_status" != "Ready" ]]; then
+          echo "JIRA ticket status is not 'Ready', PR merge not allowed."
+          exit 1
+        fi
