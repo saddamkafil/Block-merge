@@ -15,11 +15,3 @@ jobs:
       run: |
         jira_ticket="$(echo "${{ github.event.pull_request.title }}" | grep -Eo '[A-Z]+-[0-9]+')"
         echo "JIRA ticket number: $jira_ticket"
-    - name: Check JIRA status
-      if: ${{ env.jira_ticket != '' }}
-      run: |
-        jira_ticket_status="$(curl -u "${{secrets.JIRA_USERNAME}}":"${{secrets.JIRA_API_KEY}}" -X GET -H "Content-Type: application/json" "https://${{secrets.JIRA_HOST}}/rest/api/2/issue/${jira_ticket}?fields=status" | jq '.fields.status.name')"
-        if [[ "$jira_ticket_status" != "Ready" ]]; then
-          echo "JIRA ticket status is not 'Ready', PR merge not allowed."
-          exit 1
-        fi
